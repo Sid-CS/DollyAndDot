@@ -1,0 +1,11 @@
+# Original WeakAura source (reference only)
+dollyanddotwa.lua
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

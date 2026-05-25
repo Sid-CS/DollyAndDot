@@ -1,0 +1,12 @@
+## Interface: 120005
+## Title: DollyAndDot Karaoke
+## Version: 1.0.0
+## Notes: Karaoke-style lyrics with word-by-word highlighting when anyone nearby uses Meerah's Jukebox toy
+## Author: Sid-CS
+## X-Curse-Project-ID: CHANGEME
+## X-Wago-ID: CHANGEME
+
+Core.lua
+Lyrics.lua
+UI.lua
+Animation.lua
