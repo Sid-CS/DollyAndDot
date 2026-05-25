@@ -4,7 +4,7 @@
 ## Notes: Karaoke-style lyrics with word-by-word highlighting when anyone nearby uses Meerah's Jukebox toy
 ## Author: Sid-CS
 ## X-Curse-Project-ID: 1553732
-## X-Wago-ID: CHANGEME
+
 
 Core.lua
 Lyrics.lua
