@@ -7,13 +7,19 @@ ns.SPELL_NAME = "Meerah's Jukebox"
 ns.SPELL_ID = 288851
 ns.TOTAL_DURATION = 11.5
 
+-- Addon sync prefix for group communication
+local ADDON_PREFIX = "DollyAndDot"
+
 -- State
 ns.isActive = false
 ns.debugMode = false
 ns.chatEnabled = true  -- Send lyrics to party/raid chat (enabled by default)
 ns.frames = {}
 
--- Auto-detect best chat channel (matches FoodUwU pattern): instance > raid > party (nil if solo)
+-- Register addon message prefix for group sync
+C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
+
+-- Auto-detect best chat channel: instance > raid > party (nil if solo)
 function ns:GetChatChannel()
     if IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
         return "INSTANCE_CHAT"
@@ -35,17 +41,28 @@ function ns:SendChat(message, chatType)
     end
 end
 
--- Event frame — CLEU is protected in Midnight 12.0, use UNIT_SPELLCAST_SUCCEEDED instead
+-- Event frame
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 
 eventFrame:SetScript("OnEvent", function(frame, event, ...)
-    if event == "PLAYER_ENTERING_WORLD" then
-        frame:UnregisterEvent("PLAYER_ENTERING_WORLD")
-    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-        local _, _, spellId = ...
-        if spellId == ns.SPELL_ID then
+    if event == "UNIT_SPELLCAST_SUCCEEDED" then
+        local unitTarget, _, spellId = ...
+        -- Only check player's own casts — untainted, no pcall needed
+        -- Party member detection is handled via addon sync instead
+        if unitTarget == "player" and spellId == ns.SPELL_ID then
+            -- Broadcast to group so other addon users start too
+            local channel = ns:GetChatChannel()
+            if channel then
+                C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "START", channel)
+            end
+            ns:StartKaraoke()
+        end
+    elseif event == "CHAT_MSG_ADDON" then
+        local prefix, message = ...
+        if prefix == ADDON_PREFIX and message == "START" then
+            -- Start karaoke from group sync (isActive prevents double-start for broadcaster)
             ns:StartKaraoke()
         end
     end
