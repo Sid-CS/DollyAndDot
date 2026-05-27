@@ -14,7 +14,6 @@ local ADDON_PREFIX = "DollyAndDot"
 
 -- State
 ns.isActive = false
-ns.debugMode = false
 ns.chatEnabled = true  -- Send lyrics to party/raid chat (enabled by default)
 ns.frames = {}
 
@@ -124,9 +123,12 @@ end
 -- Slash commands
 SLASH_DOLLYANDDOT1 = "/dolly"
 SlashCmdList["DOLLYANDDOT"] = function(msg)
-    if msg == "stop" then
+    msg = msg and msg:lower() or ""
+    local cmd, arg = msg:match("^(%S+)%s*(.-)%s*$")
+
+    if cmd == "stop" then
         ns:StopKaraoke()
-    elseif msg == "chat" then
+    elseif cmd == "chat" then
         ns.chatEnabled = not ns.chatEnabled
         if ns.chatEnabled then
             print("|cFFFFFF00DollyAndDot|r chat |cFF00FF00ENABLED|r — lyrics will be sent to " .. ns:GetChatChannel())

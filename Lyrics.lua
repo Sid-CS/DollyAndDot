@@ -32,7 +32,7 @@ ns.LYRICS = {
             { text = "wagon",   colorAt = 3.9 },
             { text = "through", colorAt = 4.3 },
             { text = "dunes",   colorAt = 4.6 },
-            { text = "of",      colorAt = 5.15 },
+            { text = "of",      colorAt = 4.95 },
             { text = "sand!",   colorAt = 5.15 },
         },
     },

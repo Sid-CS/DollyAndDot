@@ -7,6 +7,10 @@ local FONT_SIZE = 36
 local HIGHLIGHT_COLOR = "FFFFFF00"  -- yellow
 local NORMAL_COLOR = "FFFFFFFF"     -- white
 
+-- Extra spacing between words so the karaoke-ball hop has room to feel exaggerated.
+-- Used by both BuildColoredText (render) and GetWordPositions (alpaca placement).
+ns.WORD_SEPARATOR = "   "  -- 3 spaces
+
 function ns:CreateUI()
     if self.frames.container then
         self:ResetUI()
@@ -16,7 +20,7 @@ function ns:CreateUI()
 
     -- Container frame centered above screen center (yOffset 119 from original WA)
     local container = CreateFrame("Frame", "DollyAndDotFrame", UIParent)
-    container:SetSize(900, 100)
+    container:SetSize(1200, 100)
     container:SetPoint("CENTER", UIParent, "CENTER", 0, 119)
     container:SetFrameStrata("HIGH")
     container:SetFrameLevel(100)
@@ -27,7 +31,7 @@ function ns:CreateUI()
     text:SetFont(FONT, FONT_SIZE, "OUTLINE")
     text:SetPoint("CENTER", container, "CENTER", 0, 0)
     text:SetJustifyH("CENTER")
-    text:SetWidth(900)
+    text:SetWidth(1200)
     text:SetWordWrap(false)
     self.frames.lyricsText = text
 
@@ -37,23 +41,26 @@ function ns:CreateUI()
     container:Show()
 end
 
+local ALPACA_DISPLAY_ID = 88594  -- original WeakAura value (Dot)
+local ALPACA_ANIM       = 5      -- 5 = Run on creature models; intrinsic cycle ~594ms
+local ALPACA_SIZE       = 120
+
 function ns:CreateAlpacaModel(parent)
     local alpaca = CreateFrame("PlayerModel", nil, parent)
-    alpaca:SetSize(80, 80)
+    alpaca:SetSize(ALPACA_SIZE, ALPACA_SIZE)
     alpaca:SetFrameLevel(parent:GetFrameLevel() + 1)
     alpaca:SetKeepModelOnHide(true)
 
     -- Must show before setting model (M33kAuras pattern)
     alpaca:Show()
-    -- Original WeakAura used 88594 as a displayInfo ID (modelDisplayInfo=true)
-    local ok = pcall(alpaca.SetDisplayInfo, alpaca, 88594)
+    local ok = pcall(alpaca.SetDisplayInfo, alpaca, ALPACA_DISPLAY_ID)
     if not ok then
         pcall(alpaca.SetModel, alpaca, 2139079)
     end
     pcall(alpaca.ClearTransform, alpaca)
     pcall(alpaca.SetPosition, alpaca, 0, 0, 0)
     pcall(alpaca.SetFacing, alpaca, math.rad(90))  -- face right
-    pcall(alpaca.SetAnimation, alpaca, 5)  -- jumping animation from original WA
+    pcall(alpaca.SetAnimation, alpaca, ALPACA_ANIM)
     alpaca:Hide()
 
     self.frames.alpaca = alpaca
@@ -78,5 +85,5 @@ function ns:BuildColoredText(lineIndex, elapsed)
             parts[#parts + 1] = "|c" .. NORMAL_COLOR .. word.text .. "|r"
         end
     end
-    return table.concat(parts, " ")
+    return table.concat(parts, ns.WORD_SEPARATOR)
 end
