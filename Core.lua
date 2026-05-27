@@ -6,6 +6,8 @@ DollyAndDot = ns
 ns.SPELL_NAME = "Meerah's Jukebox"
 ns.SPELL_ID = 288851
 ns.TOTAL_DURATION = 11.5
+-- sound/creature/meerah_jukebox/vo_835_meerah_jukebox_f.ogg — the extended jukebox song
+ns.SOUND_FILE_ID = 3169894
 
 -- Addon sync prefix for group communication
 local ADDON_PREFIX = "DollyAndDot"
@@ -41,10 +43,20 @@ function ns:SendChat(message, chatType)
     end
 end
 
+-- Chat events that can carry "!dolly"
+local CHAT_TRIGGER_EVENTS = {
+    "CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER",
+    "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_INSTANCE_CHAT",
+    "CHAT_MSG_INSTANCE_CHAT_LEADER", "CHAT_MSG_WHISPER",
+}
+
 -- Event frame
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
+for _, ev in ipairs(CHAT_TRIGGER_EVENTS) do
+    eventFrame:RegisterEvent(ev)
+end
 
 eventFrame:SetScript("OnEvent", function(frame, event, ...)
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
@@ -57,26 +69,41 @@ eventFrame:SetScript("OnEvent", function(frame, event, ...)
             if channel then
                 C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "START", channel)
             end
-            ns:StartKaraoke()
+            -- Toy plays its own audio — don't double up
+            ns:StartKaraoke(false)
         end
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
         if prefix == ADDON_PREFIX and message == "START" then
             -- Start karaoke from group sync (isActive prevents double-start for broadcaster)
-            ns:StartKaraoke()
+            ns:StartKaraoke(false)
+        end
+    else
+        -- One of the CHAT_TRIGGER_EVENTS — look for "!dolly"
+        local message = ...
+        if message and message:lower():match("^%s*!dolly%s*$") then
+            ns:StartKaraoke(true)
         end
     end
 end)
 
-function ns:StartKaraoke()
+function ns:StartKaraoke(playSound)
     if self.isActive then return end
     self.isActive = true
+    if playSound then
+        local ok, _, handle = pcall(PlaySoundFile, self.SOUND_FILE_ID, "Master")
+        if ok then self.soundHandle = handle end
+    end
     self:CreateUI()
     self:StartAnimation()
 end
 
 function ns:StopKaraoke()
     self.isActive = false
+    if self.soundHandle then
+        StopSound(self.soundHandle)
+        self.soundHandle = nil
+    end
     if self.frames.container then
         self.frames.container:Hide()
     end
@@ -107,6 +134,6 @@ SlashCmdList["DOLLYANDDOT"] = function(msg)
             print("|cFFFFFF00DollyAndDot|r chat |cFFFF0000DISABLED|r")
         end
     else
-        ns:StartKaraoke()
+        ns:StartKaraoke(true)
     end
 end
