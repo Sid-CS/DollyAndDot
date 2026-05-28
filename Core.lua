@@ -43,20 +43,10 @@ function ns:SendChat(message, chatType)
     end
 end
 
--- Chat events that can carry "!dolly"
-local CHAT_TRIGGER_EVENTS = {
-    "CHAT_MSG_SAY", "CHAT_MSG_YELL", "CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER",
-    "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_INSTANCE_CHAT",
-    "CHAT_MSG_INSTANCE_CHAT_LEADER", "CHAT_MSG_WHISPER",
-}
-
 -- Event frame
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
-for _, ev in ipairs(CHAT_TRIGGER_EVENTS) do
-    eventFrame:RegisterEvent(ev)
-end
 
 eventFrame:SetScript("OnEvent", function(frame, event, ...)
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
@@ -64,6 +54,8 @@ eventFrame:SetScript("OnEvent", function(frame, event, ...)
         -- Only check player's own casts — untainted, no pcall needed
         -- Party member detection is handled via addon sync instead
         if unitTarget == "player" and spellId == ns.SPELL_ID then
+            -- Block everything during combat
+            if UnitAffectingCombat("player") then return end
             -- Broadcast to group so other addon users start too
             local channel = ns:GetChatChannel()
             if channel then
@@ -75,14 +67,9 @@ eventFrame:SetScript("OnEvent", function(frame, event, ...)
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
         if prefix == ADDON_PREFIX and message == "START" then
-            -- Start karaoke from group sync (isActive prevents double-start for broadcaster)
+            -- Block everything during combat
+            if UnitAffectingCombat("player") then return end
             ns:StartKaraoke(false)
-        end
-    else
-        -- One of the CHAT_TRIGGER_EVENTS — look for "!dolly"
-        local message = ...
-        if message and message:lower():match("^%s*!dolly%s*$") then
-            ns:StartKaraoke(true)
         end
     end
 end)
@@ -129,11 +116,15 @@ SlashCmdList["DOLLYANDDOT"] = function(msg)
     elseif msg == "chat" then
         ns.chatEnabled = not ns.chatEnabled
         if ns.chatEnabled then
-            print("|cFFFFFF00DollyAndDot|r chat |cFF00FF00ENABLED|r — lyrics will be sent to " .. ns:GetChatChannel())
+            print("|cFFFFFF00DollyAndDot|r chat |cFF00FF00ENABLED|r — lyrics will be sent to " .. (ns:GetChatChannel() or "SAY"))
         else
             print("|cFFFFFF00DollyAndDot|r chat |cFFFF0000DISABLED|r")
         end
     else
+        if UnitAffectingCombat("player") then
+            print("|cFFFFFF00DollyAndDot|r can't start during combat!")
+            return
+        end
         ns:StartKaraoke(true)
     end
 end
