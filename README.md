@@ -17,6 +17,7 @@ Install via [CurseForge](https://www.curseforge.com/wow/addons/dollyand dot) or 
 - **Karaoke-style lyrics** — word-by-word yellow highlighting synced to the Dolly and Dot song
 - **Jumping alpaca** — 3D alpaca model bounces across the lyrics text
 - **Auto-trigger** — detects when anyone nearby uses Meerah's Jukebox toy (spell ID 288851)
+- **`!dolly` chat trigger** — anyone (with the addon) who types `!dolly` in say/yell/party/raid/instance/whisper starts the karaoke *and* plays the song audio, no toy required
 - **Party/Raid chat** — optionally sends lyrics to your group chat so everyone can sing along
 - **Fantasy font** — Morpheus font for that old-school WoW quest feel
 
@@ -24,9 +25,10 @@ Install via [CurseForge](https://www.curseforge.com/wow/addons/dollyand dot) or 
 
 | Command | Action |
 |---------|--------|
-| `/dolly` | Start karaoke manually (no toy needed) |
-| `/dolly stop` | Cancel mid-sequence |
+| `/dolly` | Start karaoke manually and play the song (no toy needed) |
+| `/dolly stop` | Cancel mid-sequence (also stops the audio) |
 | `/dolly chat` | Toggle party/raid chat output |
+| `!dolly` (in chat) | Anyone with the addon who sees `!dolly` in say/yell/party/raid/instance/whisper triggers karaoke + audio |
 
 ## Chat Output
 

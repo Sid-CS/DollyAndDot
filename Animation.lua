@@ -52,6 +52,12 @@ function ns:OnAnimationUpdate()
         return
     end
 
+    -- Auto-stop if player enters combat mid-song
+    if UnitAffectingCombat("player") then
+        self:StopKaraoke()
+        return
+    end
+
     -- Determine which line we're on
     for i, line in ipairs(self.LYRICS) do
         if elapsed >= line.startTime and elapsed < line.endTime then

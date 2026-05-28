@@ -6,6 +6,8 @@ DollyAndDot = ns
 ns.SPELL_NAME = "Meerah's Jukebox"
 ns.SPELL_ID = 288851
 ns.TOTAL_DURATION = 11.5
+-- sound/creature/meerah_jukebox/vo_835_meerah_jukebox_f.ogg — the extended jukebox song
+ns.SOUND_FILE_ID = 3169894
 
 -- Addon sync prefix for group communication
 local ADDON_PREFIX = "DollyAndDot"
@@ -52,31 +54,43 @@ eventFrame:SetScript("OnEvent", function(frame, event, ...)
         -- Only check player's own casts — untainted, no pcall needed
         -- Party member detection is handled via addon sync instead
         if unitTarget == "player" and spellId == ns.SPELL_ID then
+            -- Block everything during combat
+            if UnitAffectingCombat("player") then return end
             -- Broadcast to group so other addon users start too
             local channel = ns:GetChatChannel()
             if channel then
                 C_ChatInfo.SendAddonMessage(ADDON_PREFIX, "START", channel)
             end
-            ns:StartKaraoke()
+            -- Toy plays its own audio — don't double up
+            ns:StartKaraoke(false)
         end
     elseif event == "CHAT_MSG_ADDON" then
         local prefix, message = ...
         if prefix == ADDON_PREFIX and message == "START" then
-            -- Start karaoke from group sync (isActive prevents double-start for broadcaster)
-            ns:StartKaraoke()
+            -- Block everything during combat
+            if UnitAffectingCombat("player") then return end
+            ns:StartKaraoke(false)
         end
     end
 end)
 
-function ns:StartKaraoke()
+function ns:StartKaraoke(playSound)
     if self.isActive then return end
     self.isActive = true
+    if playSound then
+        local ok, _, handle = pcall(PlaySoundFile, self.SOUND_FILE_ID, "Master")
+        if ok then self.soundHandle = handle end
+    end
     self:CreateUI()
     self:StartAnimation()
 end
 
 function ns:StopKaraoke()
     self.isActive = false
+    if self.soundHandle then
+        StopSound(self.soundHandle)
+        self.soundHandle = nil
+    end
     if self.frames.container then
         self.frames.container:Hide()
     end
@@ -102,11 +116,15 @@ SlashCmdList["DOLLYANDDOT"] = function(msg)
     elseif msg == "chat" then
         ns.chatEnabled = not ns.chatEnabled
         if ns.chatEnabled then
-            print("|cFFFFFF00DollyAndDot|r chat |cFF00FF00ENABLED|r — lyrics will be sent to " .. ns:GetChatChannel())
+            print("|cFFFFFF00DollyAndDot|r chat |cFF00FF00ENABLED|r — lyrics will be sent to " .. (ns:GetChatChannel() or "SAY"))
         else
             print("|cFFFFFF00DollyAndDot|r chat |cFFFF0000DISABLED|r")
         end
     else
-        ns:StartKaraoke()
+        if UnitAffectingCombat("player") then
+            print("|cFFFFFF00DollyAndDot|r can't start during combat!")
+            return
+        end
+        ns:StartKaraoke(true)
     end
 end
